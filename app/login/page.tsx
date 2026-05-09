@@ -22,17 +22,17 @@ export default function LoginPage() {
       setLoading(true);
 
       const res = await axios.post(
-         "https://emergency-backend-production.up.railway.app/auth/login.php",
-        {
-          no_hp: noHp.trim(),
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          timeout: 10000,
-        }
-      );
+  "https://emergency-backend-production.up.railway.app/auth/login.php",
+  JSON.stringify({
+    no_hp: noHp.trim(),
+  }),
+  {
+    headers: {
+      "Content-Type": "application/json",
+    },
+    timeout: 10000,
+  }
+);
 
       console.log("LOGIN RESPONSE:", res.data);
 

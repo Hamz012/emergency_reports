@@ -1,8 +1,8 @@
 <?php
 header("Content-Type: application/json");
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
+header("Access-Control-Allow-Methods: POST, OPTIONS");
 
 include __DIR__ . '/../config/database.php';
 
@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
-$data = json_decode(file_get_contents("php://input"), true);
+$data = json_decode(file_get_contents("php://input"), true) ?? [];
 
 $no_hp = trim($data['no_hp'] ?? '');
 
@@ -22,9 +22,16 @@ if (!$no_hp) {
     exit;
 }
 
+/* normalize nomor */
+$no_hp = str_replace(["+62", " "], ["0", ""], $no_hp);
 $no_hp = mysqli_real_escape_string($conn, $no_hp);
 
-$sql = "SELECT id, nama, no_hp, role FROM users WHERE no_hp='$no_hp' LIMIT 1";
+/* query */
+$sql = "SELECT id, nama, no_hp, role 
+        FROM users 
+        WHERE TRIM(no_hp) = '$no_hp' 
+        LIMIT 1";
+
 $query = mysqli_query($conn, $sql);
 
 if (!$query) {
@@ -39,23 +46,16 @@ if (!$query) {
 $user = mysqli_fetch_assoc($query);
 
 if ($user) {
-
     echo json_encode([
         "success" => true,
         "message" => "Login berhasil",
-        "user" => [
-            "id" => $user['id'],
-            "nama" => $user['nama'],
-            "no_hp" => $user['no_hp'],
-            "role" => $user['role']
-        ]
+        "user" => $user
     ]);
-
 } else {
-
     echo json_encode([
         "success" => false,
-        "message" => "User tidak ditemukan"
+        "message" => "User tidak ditemukan",
+        "input" => $no_hp
     ]);
 }
 ?>
