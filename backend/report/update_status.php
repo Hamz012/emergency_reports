@@ -9,12 +9,19 @@ $data = json_decode(file_get_contents("php://input"), true);
 $id = $data['id'];
 $status = $data['status'];
 
-mysqli_query(
-    $conn,
-    "UPDATE reports SET status='$status' WHERE id='$id'"
-);
+$sql = "UPDATE reports SET status = ? WHERE id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("si", $status, $id);
 
-echo json_encode([
-    "success" => true
-]);
+if ($stmt->execute()) {
+    echo json_encode([
+        "success" => true,
+        "message" => "Status updated"
+    ]);
+} else {
+    echo json_encode([
+        "success" => false,
+        "message" => $stmt->error
+    ]);
+}
 ?>

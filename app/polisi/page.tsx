@@ -21,6 +21,7 @@ interface Report {
   nama: string;
   no_hp: string;
   created_at: string;
+  operator_confirm?: string;
 }
 
 export default function PolisiPage() {
@@ -30,11 +31,12 @@ export default function PolisiPage() {
   const fetchReports = async () => {
     try {
       const res = await fetch(
-        "http://127.0.0.1/pelaporan-darurat/backend/report/get_reports_by_tujuan.php?tujuan=polisi",
+        "https://emergency-backend-production.up.railway.app/report/get_reports_by_tujuan.php?tujuan=polisi",
         { cache: "no-store" }
       );
 
       const data = await res.json();
+      console.log("POLISI DATA:", data);
 
       if (Array.isArray(data)) {
         setReports(data);
@@ -148,7 +150,9 @@ export default function PolisiPage() {
                   </div>
 
                   <span className="px-4 py-2 rounded-full bg-blue-100 text-blue-700 text-sm font-medium">
-                    Masuk
+                    {report.operator_confirm === "diterima"
+                      ? "Diterima"
+                      : "Masuk"}
                   </span>
                 </div>
 
