@@ -22,7 +22,7 @@ export default function LoginPage() {
       setLoading(true);
 
       const res = await axios.post(
-        "http://localhost/pelaporan-darurat/backend/auth/login.php",
+         "https://emergency-backend-production.up.railway.app/auth/login.php",
         {
           no_hp: noHp.trim(),
         },

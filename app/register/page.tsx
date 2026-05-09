@@ -18,7 +18,7 @@ export default function RegisterPage() {
       setLoading(true);
 
       const res = await axios.post(
-        "http://localhost/pelaporan-darurat/backend/auth/register.php",
+         "https://emergency-backend-production.up.railway.app/auth/register.php",
         {
           nama,
           no_hp: noHp,
