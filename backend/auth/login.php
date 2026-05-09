@@ -22,15 +22,16 @@ if (!$no_hp) {
     exit;
 }
 
-$sql = "SELECT * FROM users WHERE no_hp='$no_hp' LIMIT 1";
+$no_hp = mysqli_real_escape_string($conn, $no_hp);
+
+$sql = "SELECT id, nama, no_hp, role FROM users WHERE no_hp='$no_hp' LIMIT 1";
 $query = mysqli_query($conn, $sql);
 
 if (!$query) {
     echo json_encode([
         "success" => false,
         "message" => "SQL ERROR",
-        "error" => mysqli_error($conn),
-        "sql" => $sql
+        "error" => mysqli_error($conn)
     ]);
     exit;
 }
@@ -38,16 +39,23 @@ if (!$query) {
 $user = mysqli_fetch_assoc($query);
 
 if ($user) {
+
     echo json_encode([
         "success" => true,
         "message" => "Login berhasil",
-        "user" => $user
+        "user" => [
+            "id" => $user['id'],
+            "nama" => $user['nama'],
+            "no_hp" => $user['no_hp'],
+            "role" => $user['role']
+        ]
     ]);
+
 } else {
+
     echo json_encode([
         "success" => false,
-        "message" => "User tidak ditemukan",
-        "input" => $no_hp
+        "message" => "User tidak ditemukan"
     ]);
 }
 ?>
