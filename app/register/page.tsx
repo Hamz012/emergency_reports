@@ -14,29 +14,38 @@ export default function RegisterPage() {
   const router = useRouter();
 
   const handleRegister = async () => {
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      const res = await axios.post(
-         "https://emergency-backend-production.up.railway.app/auth/register.php",
-        {
-          nama,
-          no_hp: noHp,
-        }
-      );
-
-      if (res.data.success) {
-        alert("Registrasi berhasil");
-        router.push("/login");
-      } else {
-        alert(res.data.message);
+    const res = await axios.post(
+      "https://emergency-backend-production.up.railway.app/auth/register.php",
+      {
+        nama,
+        no_hp: noHp,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        timeout: 10000,
       }
-    } catch {
-      alert("Server error");
-    } finally {
-      setLoading(false);
+    );
+
+    console.log(res.data);
+
+    if (res?.data?.success) {
+      alert("Register berhasil");
+      router.push("/login");
+    } else {
+      alert(res?.data?.message || "Register gagal");
     }
-  };
+  } catch (err) {
+    console.error(err);
+    alert("Server error");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <main className="relative min-h-screen flex items-center justify-center px-4 overflow-hidden">

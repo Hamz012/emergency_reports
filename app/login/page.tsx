@@ -13,72 +13,43 @@ export default function LoginPage() {
   const router = useRouter();
 
   const handleLogin = async () => {
-    if (!noHp.trim()) {
-      alert("Nomor HP wajib diisi");
-      return;
+  try {
+    setLoading(true);
+
+    const res = await axios.post(
+      "https://emergency-backend-production.up.railway.app/auth/login.php",
+      {
+        no_hp: noHp,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log(res.data);
+
+    if (res?.data?.success) {
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+
+      const role = res.data.user.role;
+
+      if (role === "admin") router.push("/admin");
+      else if (role === "polisi") router.push("/polisi");
+      else if (role === "pemadam") router.push("/pemadam");
+      else if (role === "ambulance") router.push("/ambulance");
+      else router.push("/dashboard");
+    } else {
+      alert(res?.data?.message || "Login gagal");
     }
-
-    try {
-      setLoading(true);
-
-      const res = await axios.post(
-  "https://emergency-backend-production.up.railway.app/auth/login.php",
-  JSON.stringify({
-    no_hp: noHp.trim(),
-  }),
-  {
-    headers: {
-      "Content-Type": "application/json",
-    },
-    timeout: 10000,
+  } catch (err) {
+    console.error(err);
+    alert("Backend tidak merespon");
+  } finally {
+    setLoading(false);
   }
-);
-
-      console.log("LOGIN RESPONSE:", res.data);
-
-      if (res.data.success) {
-        localStorage.setItem("user", JSON.stringify(res.data.user));
-
-        const role = res.data.user.role;
-
-        switch (role) {
-          case "polisi":
-            router.push("/polisi");
-            break;
-
-          case "pemadam":
-            router.push("/pemadam");
-            break;
-
-          case "ambulance":
-            router.push("/ambulance");
-            break;
-
-          case "admin":
-            router.push("/admin");
-            break;
-
-          default:
-            router.push("/dashboard");
-            break;
-        }
-      } else {
-        alert(res.data.message || "Login gagal");
-      }
-    } catch (error: any) {
-      console.error("LOGIN ERROR:", error);
-
-      if (error.response) {
-        alert(error.response.data?.message || "Backend error");
-      } else if (error.request) {
-        alert("Backend PHP tidak merespon");
-      } else {
-        alert("Terjadi kesalahan");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+};
 
   return (
     <main className="relative min-h-screen flex items-center justify-center px-4 overflow-hidden">

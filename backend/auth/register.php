@@ -1,71 +1,60 @@
 <?php
-
 header("Content-Type: application/json");
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST");
 header("Access-Control-Allow-Headers: Content-Type");
+header("Access-Control-Allow-Methods: POST, OPTIONS");
 
 include __DIR__ . '/../config/database.php';
 
-// Ambil data JSON dari frontend
-$data = json_decode(file_get_contents("php://input"), true);
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    exit(0);
+}
 
-// Validasi input
-if (
-    !isset($data['nama']) || empty(trim($data['nama'])) ||
-    !isset($data['no_hp']) || empty(trim($data['no_hp']))
-) {
+$data = json_decode(file_get_contents("php://input"), true) ?? [];
+
+$nama = trim($data['nama'] ?? '');
+$no_hp = trim($data['no_hp'] ?? '');
+
+if (!$nama || !$no_hp) {
     echo json_encode([
         "success" => false,
-        "message" => "Nama dan nomor HP wajib diisi"
+        "message" => "Data tidak lengkap"
     ]);
     exit;
 }
 
-$nama = trim($data['nama']);
-$no_hp = trim($data['no_hp']);
+/* normalize nomor */
+$no_hp = str_replace("+62", "0", $no_hp);
+$no_hp = mysqli_real_escape_string($conn, $no_hp);
+$nama = mysqli_real_escape_string($conn, $nama);
 
-// Cek apakah nomor HP sudah ada
-$checkStmt = mysqli_prepare($conn, "SELECT id FROM users WHERE no_hp = ?");
-mysqli_stmt_bind_param($checkStmt, "s", $no_hp);
-mysqli_stmt_execute($checkStmt);
+/* cek duplikat */
+$cek = mysqli_query($conn, "SELECT id FROM users WHERE no_hp='$no_hp'");
 
-$checkResult = mysqli_stmt_get_result($checkStmt);
-
-if (mysqli_num_rows($checkResult) > 0) {
+if (mysqli_num_rows($cek) > 0) {
     echo json_encode([
         "success" => false,
-        "message" => "Nomor HP sudah terdaftar"
+        "message" => "Nomor sudah terdaftar"
     ]);
-
-    mysqli_stmt_close($checkStmt);
-    mysqli_close($conn);
     exit;
 }
 
-mysqli_stmt_close($checkStmt);
-
-// Insert user baru
-$insertStmt = mysqli_prepare(
-    $conn,
-    "INSERT INTO users (nama, no_hp, role) VALUES (?, ?, 'user')"
+/* insert user */
+$insert = mysqli_query($conn,
+    "INSERT INTO users (nama, no_hp, role)
+     VALUES ('$nama', '$no_hp', 'user')"
 );
 
-mysqli_stmt_bind_param($insertStmt, "ss", $nama, $no_hp);
-
-if (mysqli_stmt_execute($insertStmt)) {
+if ($insert) {
     echo json_encode([
         "success" => true,
-        "message" => "Registrasi berhasil"
+        "message" => "Register berhasil"
     ]);
 } else {
     echo json_encode([
         "success" => false,
-        "message" => "Registrasi gagal"
+        "message" => "Register gagal",
+        "error" => mysqli_error($conn)
     ]);
 }
-
-mysqli_stmt_close($insertStmt);
-mysqli_close($conn);
-
 ?>

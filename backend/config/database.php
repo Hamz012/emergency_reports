@@ -1,27 +1,30 @@
 <?php
 header("Content-Type: application/json");
 
-// ambil dari Railway Environment Variables
-$host = getenv("DB_HOST");
-$username = getenv("DB_USER");
-$password = getenv("DB_PASS");
-$database = getenv("DB_NAME");
-$port = getenv("DB_PORT") ?: 3306;
+$url = getenv("DATABASE_URL");
 
-// validasi env
-if (!$host || !$username || !$database) {
+if (!$url) {
     die(json_encode([
         "success" => false,
-        "message" => "ENV Railway belum diset"
+        "message" => "DATABASE_URL tidak ditemukan"
     ]));
 }
 
-$conn = mysqli_connect($host, $username, $password, $database, $port);
+/* parse URL dari Railway */
+$db = parse_url($url);
+
+$host = $db["host"];
+$user = $db["user"];
+$pass = $db["pass"];
+$dbname = ltrim($db["path"], "/");
+$port = $db["port"] ?? 3306;
+
+$conn = mysqli_connect($host, $user, $pass, $dbname, $port);
 
 if (!$conn) {
     die(json_encode([
         "success" => false,
-        "message" => "Koneksi DB gagal",
+        "message" => "Koneksi gagal",
         "error" => mysqli_connect_error()
     ]));
 }

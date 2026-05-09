@@ -22,11 +22,10 @@ if (!$no_hp) {
     exit;
 }
 
-/* normalize nomor */
-$no_hp = str_replace(["+62", " "], ["0", ""], $no_hp);
+/* normalize */
+$no_hp = str_replace("+62", "0", $no_hp);
 $no_hp = mysqli_real_escape_string($conn, $no_hp);
 
-/* query */
 $sql = "SELECT id, nama, no_hp, role 
         FROM users 
         WHERE TRIM(no_hp) = '$no_hp' 
@@ -54,8 +53,7 @@ if ($user) {
 } else {
     echo json_encode([
         "success" => false,
-        "message" => "User tidak ditemukan",
-        "input" => $no_hp
+        "message" => "User tidak ditemukan"
     ]);
 }
 ?>
