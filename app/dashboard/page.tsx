@@ -25,7 +25,7 @@ export default function DashboardPage() {
   const fetchReports = async (userId: number) => {
     try {
       const res = await fetch(
-        `http://localhost/pelaporan-darurat/backend/report/get_user_reports.php?user_id=${userId}`
+       "https://emergency-backend-production.up.railway.app/backend/report/get_user_reports.php?user_id=${userId}"
       );
 
       const data = await res.json();
