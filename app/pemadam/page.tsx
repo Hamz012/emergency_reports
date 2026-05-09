@@ -25,33 +25,33 @@ interface Report {
 
 export default function PemadamPage() {
   const [reports, setReports] = useState<Report[]>([]);
-  const [chartData, setChartData] = useState<
-    { name: string; total: number }[]
-  >([]);
+  const [chartData, setChartData] = useState<{ name: string; total: number }[]>([]);
 
   const fetchReports = async () => {
     try {
       const res = await fetch(
         "http://127.0.0.1/pelaporan-darurat/backend/report/get_reports_by_tujuan.php?tujuan=pemadam",
-        {
-          cache: "no-store",
-        }
+        { cache: "no-store" }
       );
+
+      if (!res.ok) throw new Error("Server error");
 
       const data = await res.json();
 
-      if (Array.isArray(data)) {
-        setReports(data);
+      const safeData = Array.isArray(data) ? data : [];
 
-        setChartData([
-          {
-            name: "Pemadam",
-            total: data.length,
-          },
-        ]);
-      }
+      setReports(safeData);
+
+      setChartData([
+        {
+          name: "Pemadam",
+          total: safeData.length,
+        },
+      ]);
     } catch (error) {
-      console.log(error);
+      console.log("FETCH ERROR:", error);
+      setReports([]);
+      setChartData([{ name: "Pemadam", total: 0 }]);
     }
   };
 
@@ -68,6 +68,7 @@ export default function PemadamPage() {
   return (
     <main className="min-h-screen bg-slate-100 px-6 py-8">
       <div className="max-w-6xl mx-auto">
+
         {/* HEADER */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-orange-700">
@@ -116,11 +117,7 @@ export default function PemadamPage() {
                 <XAxis dataKey="name" />
                 <YAxis allowDecimals={false} />
                 <Tooltip />
-                <Bar
-                  dataKey="total"
-                  fill="#ea580c"
-                  radius={[8, 8, 0, 0]}
-                />
+                <Bar dataKey="total" fill="#ea580c" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

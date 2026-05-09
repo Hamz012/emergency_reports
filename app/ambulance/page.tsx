@@ -25,25 +25,25 @@ interface Report {
 
 export default function AmbulancePage() {
   const [reports, setReports] = useState<Report[]>([]);
-  const [chartData, setChartData] = useState<
-    { name: string; total: number }[]
-  >([]);
+  const [chartData, setChartData] = useState<{ name: string; total: number }[]>([]);
 
-  // =========================
-  // FETCH REPORTS (FIXED)
-  // =========================
   const fetchReports = async () => {
     try {
       const res = await fetch(
         "https://emergency-backend-production.up.railway.app/report/get_reports_by_tujuan.php?tujuan=ambulance",
-        {
-          cache: "no-store",
-        }
+        { cache: "no-store" }
       );
 
-      const data = await res.json();
+      const text = await res.text();
 
-      // FIX: pastikan array aman
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        console.error("Response bukan JSON:", text);
+        data = [];
+      }
+
       const safeData = Array.isArray(data) ? data : [];
 
       setReports(safeData);
@@ -54,10 +54,10 @@ export default function AmbulancePage() {
           total: safeData.length,
         },
       ]);
+
     } catch (error) {
       console.error("Fetch error:", error);
 
-      // fallback biar UI tidak rusak
       setReports([]);
       setChartData([{ name: "Ambulance", total: 0 }]);
     }
@@ -66,9 +66,7 @@ export default function AmbulancePage() {
   useEffect(() => {
     fetchReports();
 
-    const interval = setInterval(() => {
-      fetchReports();
-    }, 5000);
+    const interval = setInterval(fetchReports, 5000);
 
     return () => clearInterval(interval);
   }, []);
@@ -145,11 +143,10 @@ export default function AmbulancePage() {
                 className="bg-white rounded-3xl border p-6 shadow-sm"
               >
 
-                {/* HEADER CARD */}
                 <div className="flex justify-between items-start gap-3">
                   <div>
                     <h2 className="text-xl font-bold text-green-700 capitalize">
-                      {report.kategori || "tidak ada kategori"}
+                      {report.kategori || "-"}
                     </h2>
 
                     <p className="text-sm text-slate-500 mt-1">
@@ -162,31 +159,24 @@ export default function AmbulancePage() {
                   </span>
                 </div>
 
-                {/* DESKRIPSI */}
                 <p className="mt-4 text-slate-700">
                   {report.deskripsi || "-"}
                 </p>
 
-                {/* USER INFO */}
                 <div className="grid md:grid-cols-2 gap-4 mt-5">
 
                   <div className="bg-slate-50 border rounded-2xl p-4">
                     <p className="text-xs text-slate-500">Nama</p>
-                    <p className="font-semibold">
-                      {report.nama || "-"}
-                    </p>
+                    <p className="font-semibold">{report.nama || "-"}</p>
                   </div>
 
                   <div className="bg-slate-50 border rounded-2xl p-4">
                     <p className="text-xs text-slate-500">No HP</p>
-                    <p className="font-semibold">
-                      {report.no_hp || "-"}
-                    </p>
+                    <p className="font-semibold">{report.no_hp || "-"}</p>
                   </div>
 
                 </div>
 
-                {/* MAP */}
                 {report.latitude && report.longitude && (
                   <div className="mt-5">
                     <a
