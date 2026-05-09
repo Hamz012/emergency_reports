@@ -13,14 +13,15 @@ import {
 
 interface Report {
   id: number;
-  kategori: string;
-  deskripsi: string;
-  alamat: string;
-  latitude: string;
-  longitude: string;
-  nama: string;
-  no_hp: string;
-  created_at: string;
+  kategori?: string;
+  deskripsi?: string;
+  alamat?: string;
+  latitude?: string;
+  longitude?: string;
+  nama?: string;
+  no_hp?: string;
+  created_at?: string;
+  operator_confirm?: string;
 }
 
 export default function PemadamPage() {
@@ -30,14 +31,11 @@ export default function PemadamPage() {
   const fetchReports = async () => {
     try {
       const res = await fetch(
-        "http://127.0.0.1/pelaporan-darurat/backend/report/get_reports_by_tujuan.php?tujuan=pemadam",
+        "https://emergency-backend-production.up.railway.app/report/get_reports_by_tujuan.php?tujuan=pemadam",
         { cache: "no-store" }
       );
 
-      if (!res.ok) throw new Error("Server error");
-
       const data = await res.json();
-
       const safeData = Array.isArray(data) ? data : [];
 
       setReports(safeData);
@@ -49,7 +47,7 @@ export default function PemadamPage() {
         },
       ]);
     } catch (error) {
-      console.log("FETCH ERROR:", error);
+      console.log(error);
       setReports([]);
       setChartData([{ name: "Pemadam", total: 0 }]);
     }
@@ -57,11 +55,7 @@ export default function PemadamPage() {
 
   useEffect(() => {
     fetchReports();
-
-    const interval = setInterval(() => {
-      fetchReports();
-    }, 5000);
-
+    const interval = setInterval(fetchReports, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -74,7 +68,6 @@ export default function PemadamPage() {
           <h1 className="text-3xl font-bold text-orange-700">
             Dashboard Pemadam Kebakaran
           </h1>
-
           <p className="text-slate-500 mt-2">
             Monitoring laporan kebakaran realtime
           </p>
@@ -106,7 +99,7 @@ export default function PemadamPage() {
 
         {/* CHART */}
         <div className="bg-white rounded-2xl shadow-sm border p-6 mb-8">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">
+          <h2 className="text-lg font-semibold mb-4">
             Grafik Laporan Kebakaran
           </h2>
 
@@ -135,66 +128,78 @@ export default function PemadamPage() {
                 key={report.id}
                 className="bg-white rounded-3xl shadow-sm border p-6"
               >
-                <div className="flex justify-between items-start flex-wrap gap-3">
+
+                {/* HEADER CARD */}
+                <div className="flex justify-between items-start gap-3">
                   <div>
                     <h2 className="text-xl font-bold text-orange-700 capitalize">
-                      {report.kategori}
+                      {report.kategori || "tanpa kategori"}
                     </h2>
-
-                    <p className="text-sm text-slate-500 mt-1">
-                      ID Laporan #{report.id}
+                    <p className="text-sm text-slate-500">
+                      ID #{report.id}
                     </p>
                   </div>
 
-                  <span className="px-4 py-2 rounded-full bg-orange-100 text-orange-700 text-sm font-medium">
-                    Masuk
+                  <span className={`px-4 py-2 rounded-full text-sm font-medium ${
+                    report.operator_confirm === "diterima"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-yellow-100 text-yellow-700"
+                  }`}>
+                    {report.operator_confirm === "diterima"
+                      ? "Diterima"
+                      : "Masuk"}
                   </span>
                 </div>
 
-                <p className="mt-4 text-slate-700 leading-relaxed">
-                  {report.deskripsi}
+                {/* DESKRIPSI */}
+                <p className="mt-4 text-slate-700">
+                  {report.deskripsi || "-"}
                 </p>
 
                 {/* DATA PELAPOR */}
                 <div className="grid md:grid-cols-2 gap-4 mt-5">
+
                   <div className="bg-slate-50 border rounded-2xl p-4">
                     <p className="text-xs text-slate-500">Nama Pelapor</p>
-                    <p className="font-semibold text-slate-900">
+                    <p className="font-semibold">
                       {report.nama || "-"}
                     </p>
                   </div>
 
                   <div className="bg-slate-50 border rounded-2xl p-4">
-                    <p className="text-xs text-slate-500">Nomor HP</p>
-                    <p className="font-semibold text-slate-900">
+                    <p className="text-xs text-slate-500">No HP</p>
+                    <p className="font-semibold">
                       {report.no_hp || "-"}
                     </p>
                   </div>
+
                 </div>
 
-                {/* MAP LINK */}
-                <div className="mt-5">
-                  <a
-                    href={report.alamat}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 font-medium block mb-3 hover:underline"
-                  >
-                    📍 Buka lokasi di Google Maps
-                  </a>
+                {/* MAP */}
+                {report.latitude && report.longitude && (
+                  <div className="mt-5">
+                    <a
+                      href={report.alamat || "#"}
+                      target="_blank"
+                      className="text-blue-600 hover:underline block mb-3"
+                    >
+                      📍 Buka Google Maps
+                    </a>
 
-                  <iframe
-                    src={`https://maps.google.com/maps?q=${report.latitude},${report.longitude}&z=15&output=embed`}
-                    width="100%"
-                    height="250"
-                    className="rounded-2xl border"
-                    loading="lazy"
-                  />
-                </div>
+                    <iframe
+                      src={`https://maps.google.com/maps?q=${report.latitude},${report.longitude}&z=15&output=embed`}
+                      width="100%"
+                      height="250"
+                      className="rounded-2xl border"
+                    />
+                  </div>
+                )}
+
               </div>
             ))}
           </div>
         )}
+
       </div>
     </main>
   );
