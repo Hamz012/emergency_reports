@@ -4,32 +4,33 @@ header("Access-Control-Allow-Origin: *");
 
 include __DIR__ . '/../config/database.php';
 
-if (!$conn) {
-    echo json_encode([
-        "success" => false,
-        "message" => "Database connection failed"
-    ]);
-    exit;
-}
-
-$query = "SELECT * FROM reports ORDER BY id DESC";
-$result = mysqli_query($conn, $query);
-
-if (!$result) {
-    echo json_encode([
-        "success" => false,
-        "message" => mysqli_error($conn)
-    ]);
-    exit;
-}
+$query = mysqli_query($conn, "
+    SELECT 
+        r.id,
+        r.user_id,
+        u.nama,
+        u.no_hp,
+        r.kategori,
+        r.deskripsi,
+        r.alamat,
+        r.latitude,
+        r.longitude,
+        r.status,
+        r.created_at
+    FROM reports r
+    LEFT JOIN users u ON r.user_id = u.id
+    ORDER BY r.created_at DESC
+");
 
 $data = [];
 
-while ($row = mysqli_fetch_assoc($result)) {
-    $row['operator_confirm'] = $row['operator_confirm'] ?? "belum";
-    $row['created_at'] = $row['created_at'] ?? date('Y-m-d H:i:s');
+while ($row = mysqli_fetch_assoc($query)) {
     $data[] = $row;
 }
 
-echo json_encode($data, JSON_PRETTY_PRINT);
+echo json_encode([
+    "success" => true,
+    "total" => count($data),
+    "reports" => $data
+]);
 ?>

@@ -4,20 +4,27 @@ header("Access-Control-Allow-Origin: *");
 
 include __DIR__ . '/../config/database.php';
 
-$tujuan = $_GET['tujuan'] ?? '';
+$tujuan = $_GET['tujuan'] ?? 'polisi';
 
-$query = "
+$sql = "
 SELECT 
-    reports.*,
-    users.nama,
-    users.no_hp
-FROM reports
-LEFT JOIN users ON reports.user_id = users.id
-WHERE reports.tujuan = '$tujuan'
-ORDER BY reports.id DESC
+r.id,
+r.kategori,
+r.deskripsi,
+r.alamat,
+r.latitude,
+r.longitude,
+r.created_at,
+r.operator_confirm,
+u.nama,
+u.no_hp
+FROM reports r
+JOIN users u ON r.user_id = u.id
+WHERE r.tujuan = '$tujuan'
+ORDER BY r.created_at DESC
 ";
 
-$result = mysqli_query($conn, $query);
+$result = mysqli_query($conn, $sql);
 
 $data = [];
 

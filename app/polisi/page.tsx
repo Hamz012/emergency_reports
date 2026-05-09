@@ -25,17 +25,13 @@ interface Report {
 
 export default function PolisiPage() {
   const [reports, setReports] = useState<Report[]>([]);
-  const [chartData, setChartData] = useState<
-    { name: string; total: number }[]
-  >([]);
+  const [chartData, setChartData] = useState<{ name: string; total: number }[]>([]);
 
   const fetchReports = async () => {
     try {
       const res = await fetch(
         "http://127.0.0.1/pelaporan-darurat/backend/report/get_reports_by_tujuan.php?tujuan=polisi",
-        {
-          cache: "no-store",
-        }
+        { cache: "no-store" }
       );
 
       const data = await res.json();
@@ -49,9 +45,14 @@ export default function PolisiPage() {
             total: data.length,
           },
         ]);
+      } else {
+        setReports([]);
+        setChartData([{ name: "Polisi", total: 0 }]);
       }
     } catch (error) {
-      console.log(error);
+      console.log("FETCH ERROR:", error);
+      setReports([]);
+      setChartData([{ name: "Polisi", total: 0 }]);
     }
   };
 
@@ -65,15 +66,17 @@ export default function PolisiPage() {
     return () => clearInterval(interval);
   }, []);
 
+  const totalReports = reports.length;
+
   return (
     <main className="min-h-screen bg-slate-100 px-6 py-8">
       <div className="max-w-6xl mx-auto">
+
         {/* HEADER */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-blue-700">
             Dashboard Polisi
           </h1>
-
           <p className="text-slate-500 mt-2">
             Monitoring laporan kriminal realtime
           </p>
@@ -84,7 +87,7 @@ export default function PolisiPage() {
           <div className="bg-white rounded-2xl shadow-sm border p-5">
             <p className="text-sm text-slate-500">Total Laporan</p>
             <h2 className="text-3xl font-bold text-blue-600 mt-2">
-              {reports.length}
+              {totalReports}
             </h2>
           </div>
 
@@ -116,18 +119,14 @@ export default function PolisiPage() {
                 <XAxis dataKey="name" />
                 <YAxis allowDecimals={false} />
                 <Tooltip />
-                <Bar
-                  dataKey="total"
-                  fill="#2563eb"
-                  radius={[8, 8, 0, 0]}
-                />
+                <Bar dataKey="total" fill="#2563eb" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* REPORT LIST */}
-        {reports.length === 0 ? (
+        {totalReports === 0 ? (
           <div className="bg-white rounded-2xl border p-8 text-center text-slate-500">
             Belum ada laporan kriminal
           </div>
@@ -143,7 +142,6 @@ export default function PolisiPage() {
                     <h2 className="text-xl font-bold text-blue-700 capitalize">
                       {report.kategori}
                     </h2>
-
                     <p className="text-sm text-slate-500 mt-1">
                       ID Laporan #{report.id}
                     </p>

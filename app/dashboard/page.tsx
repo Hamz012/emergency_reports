@@ -22,19 +22,28 @@ export default function DashboardPage() {
   const [locationReady, setLocationReady] = useState(false);
   const [reports, setReports] = useState<any[]>([]);
 
+  // =========================
+  // FETCH REPORTS (FIXED)
+  // =========================
   const fetchReports = async (userId: number) => {
     try {
       const res = await fetch(
-        `http://localhost/pelaporan-darurat/backend/report/get_user_reports.php?user_id=${userId}`
+        `https://emergency-backend-production.up.railway.app/report/get_user_reports.php?user_id=${userId}`
       );
 
       const data = await res.json();
+
+      // FIX: pastikan array valid
       setReports(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error(err);
+      console.error("Fetch error:", err);
+      setReports([]);
     }
   };
 
+  // =========================
+  // INIT
+  // =========================
   useEffect(() => {
     const data = localStorage.getItem("user");
 
@@ -46,16 +55,17 @@ export default function DashboardPage() {
     const parsed = JSON.parse(data);
     setUser(parsed);
 
-    let interval: NodeJS.Timeout;
-
     if (parsed?.id) {
       fetchReports(parsed.id);
 
-      interval = setInterval(() => {
+      const interval = setInterval(() => {
         fetchReports(parsed.id);
       }, 5000);
+
+      return () => clearInterval(interval);
     }
 
+    // GPS
     if ("geolocation" in navigator) {
       navigator.geolocation.watchPosition(
         (pos) => {
@@ -66,25 +76,32 @@ export default function DashboardPage() {
           setLocationReady(true);
         },
         () => setLocationReady(false),
-        {
-          enableHighAccuracy: true,
-        }
+        { enableHighAccuracy: true }
       );
     }
+  }, []);
 
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [router]);
+  // =========================
+  // FIX STATUS LOGIC
+  // =========================
+  const getStatus = (r: any) => {
+    // fallback multi field (biar gak error)
+    return r.status || r.operator_confirm || "pending";
+  };
 
-  const acceptedReports = reports.filter(
-    (r) => r.operator_confirm === "diterima"
+  const totalReports = reports.length;
+
+  const doneReports = reports.filter(
+    (r) => getStatus(r) === "done" || getStatus(r) === "diterima"
   ).length;
+
+  const pendingReports = totalReports - doneReports;
 
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-10">
       <div className="max-w-6xl mx-auto space-y-8">
-        {/* Header */}
+
+        {/* HEADER */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -98,154 +115,133 @@ export default function DashboardPage() {
           </p>
         </motion.div>
 
-        {/* Stats */}
+        {/* STATS */}
         <div className="grid md:grid-cols-3 gap-5">
-          <motion.div
-            whileHover={{ y: -4 }}
-            className="bg-white border rounded-3xl shadow-sm p-5"
-          >
+
+          {/* TOTAL */}
+          <motion.div className="bg-white border rounded-3xl shadow-sm p-5">
             <div className="flex items-center gap-3">
               <FileText className="text-blue-600" size={20} />
               <span className="text-slate-500 text-sm">Total Laporan</span>
             </div>
             <h2 className="text-3xl font-bold mt-3 text-slate-900">
-              {reports.length}
+              {totalReports}
             </h2>
           </motion.div>
 
-          <motion.div
-            whileHover={{ y: -4 }}
-            className="bg-white border rounded-3xl shadow-sm p-5"
-          >
+          {/* SELESAI */}
+          <motion.div className="bg-white border rounded-3xl shadow-sm p-5">
             <div className="flex items-center gap-3">
               <CheckCircle2 className="text-green-600" size={20} />
-              <span className="text-slate-500 text-sm">Diterima</span>
+              <span className="text-slate-500 text-sm">Selesai</span>
             </div>
             <h2 className="text-3xl font-bold mt-3 text-green-600">
-              {acceptedReports}
+              {doneReports}
             </h2>
           </motion.div>
 
-          <motion.div
-            whileHover={{ y: -4 }}
-            className="bg-white border rounded-3xl shadow-sm p-5"
-          >
+          {/* DIPROSES */}
+          <motion.div className="bg-white border rounded-3xl shadow-sm p-5">
             <div className="flex items-center gap-3">
               <Bell className="text-yellow-600" size={20} />
               <span className="text-slate-500 text-sm">Diproses</span>
             </div>
             <h2 className="text-3xl font-bold mt-3 text-yellow-600">
-              {reports.length - acceptedReports}
+              {pendingReports}
             </h2>
           </motion.div>
+
         </div>
 
-        {/* Action Card */}
-        <motion.div
-          whileHover={{ scale: 1.01 }}
-          className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-3xl p-6 shadow-lg"
-        >
+        {/* ACTION */}
+        <motion.div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-3xl p-6 shadow-lg">
           <h2 className="text-xl font-bold">Lapor Darurat</h2>
           <p className="text-blue-100 text-sm mt-2 mb-5">
-            Kirim laporan kejadian secara cepat berdasarkan lokasi realtime Anda
+            Kirim laporan dengan lokasi realtime
           </p>
 
           <button
             onClick={() => router.push("/report")}
-            className="bg-white text-blue-600 font-semibold px-6 py-3 rounded-2xl hover:bg-slate-100 transition"
+            className="bg-white text-blue-600 font-semibold px-6 py-3 rounded-2xl"
           >
             Buat Laporan
           </button>
         </motion.div>
 
-        {/* Reports */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="bg-white border rounded-3xl shadow-sm p-6"
-        >
-          <h3 className="font-semibold text-slate-900 mb-4">
-            Riwayat Laporan
-          </h3>
+        {/* LIST REPORT */}
+        <motion.div className="bg-white border rounded-3xl shadow-sm p-6">
+          <h3 className="font-semibold mb-4">Riwayat Laporan</h3>
 
           {reports.length === 0 ? (
-            <p className="text-slate-400 text-sm">
-              Belum ada laporan tersedia
-            </p>
+            <p className="text-slate-400">Belum ada laporan</p>
           ) : (
             <div className="space-y-3">
-              {reports.map((r) => (
-                <div
-                  key={r.id}
-                  className="p-4 rounded-2xl border bg-slate-50"
-                >
-                  <div className="flex justify-between items-center">
-                    <h4 className="font-semibold capitalize text-slate-900">
-                      {r.kategori}
-                    </h4>
+              {reports.map((r) => {
+                const status = getStatus(r);
 
-                    <span
-                      className={`text-xs px-3 py-1 rounded-full font-medium ${
-                        r.operator_confirm === "diterima"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-yellow-100 text-yellow-700"
-                      }`}
-                    >
-                      {r.operator_confirm === "diterima"
-                        ? "Diterima"
-                        : "Diproses"}
-                    </span>
+                return (
+                  <div key={r.id} className="p-4 border rounded-2xl bg-slate-50">
+
+                    <div className="flex justify-between">
+                      <h4 className="font-semibold capitalize">
+                        {r.kategori}
+                      </h4>
+
+                      <span
+                        className={`text-xs px-3 py-1 rounded-full ${
+                          status === "done" || status === "diterima"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-yellow-100 text-yellow-700"
+                        }`}
+                      >
+                        {status === "done" || status === "diterima"
+                          ? "Selesai"
+                          : "Diproses"}
+                      </span>
+                    </div>
+
+                    <p className="text-sm text-slate-500 mt-2">
+                      {r.deskripsi}
+                    </p>
                   </div>
-
-                  <p className="text-sm text-slate-500 mt-2">
-                    {r.deskripsi}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </motion.div>
 
-        {/* Map */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="bg-white border rounded-3xl shadow-sm overflow-hidden"
-        >
+        {/* MAP */}
+        <motion.div className="bg-white border rounded-3xl shadow-sm overflow-hidden">
           <div className="p-5 border-b flex items-center gap-2">
             <MapPin className="text-blue-600" size={18} />
-            <h3 className="font-semibold text-slate-900">
-              Lokasi Realtime
-            </h3>
+            <h3 className="font-semibold">Lokasi Realtime</h3>
           </div>
 
           {!locationReady ? (
             <div className="h-[280px] flex items-center justify-center text-red-500">
-              Aktifkan GPS untuk melihat lokasi realtime
+              Aktifkan GPS
             </div>
           ) : (
             <iframe
               src={`https://maps.google.com/maps?q=${location.lat},${location.lng}&z=16&output=embed`}
               width="100%"
               height="280"
-              loading="lazy"
               className="pointer-events-none"
             />
           )}
         </motion.div>
 
-        {/* Logout */}
-        <motion.button
-          whileTap={{ scale: 0.97 }}
+        {/* LOGOUT */}
+        <button
           onClick={() => {
             localStorage.removeItem("user");
             router.push("/login");
           }}
-          className="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-2xl font-semibold flex items-center justify-center gap-2 transition"
+          className="w-full bg-red-500 text-white py-3 rounded-2xl font-semibold"
         >
-          <LogOut size={18} />
           Logout
-        </motion.button>
+        </button>
+
       </div>
     </main>
   );
