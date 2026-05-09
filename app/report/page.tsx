@@ -48,22 +48,22 @@ export default function ReportPage() {
       const alamat = `https://maps.google.com/?q=${latitude},${longitude}`;
 
       const res = await fetch(
-        "http://127.0.0.1/pelaporan-darurat/backend/report/create_report.php",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            user_id: user.id,
-            kategori,
-            deskripsi,
-            alamat,
-            latitude,
-            longitude,
-          }),
-        }
-      );
+  "https://emergency-backend-production.up.railway.app/report/create_report.php",
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      user_id: user.id,
+      kategori,
+      deskripsi,
+      alamat,
+      latitude,
+      longitude,
+    }),
+  }
+);
 
       const data = await res.json();
       console.log(data);
