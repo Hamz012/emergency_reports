@@ -1,4 +1,4 @@
 <?php
-include __DIR__ . '/config/database.php';
+include __DIR__ . '/config/db.php';
 echo "database connected";
 ?>
